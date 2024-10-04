@@ -22,7 +22,8 @@
 #define MAX_LOADSTRING 100
 
 // Глобальные переменные:
-HINSTANCE hInst;                                // текущий экземпляр
+HWND GlobalhWnd = NULL;
+HINSTANCE hInstance = NULL;                                // текущий экземпляр
 std::string szTitle = "KPVLGraf";                  // Текст строки заголовка
 std::string szWindowClass = "KPVLGraf";            // имя класса главного окна
 
@@ -38,7 +39,7 @@ LRESULT CALLBACK Command(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int wmId = LOWORD(wParam);
     // Разобрать выбор в меню:
-    if(wmId == IDM_ABOUT) return DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+    if(wmId == IDM_ABOUT) return DialogBox(hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
     if(wmId == IDM_EXIT) return DestroyWindow(hWnd);
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
@@ -47,24 +48,25 @@ LRESULT CALLBACK Command(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if(message == WM_COMMAND)return Command(hWnd, message, wParam, lParam);
-    if(message == WM_PAINT) return PaintCmd(hWnd, message, wParam, lParam);
     if(message == WM_DESTROY)return Quit();
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance()
 {
-    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
 
-    HWND hWnd = CreateWindow(szWindowClass.c_str(), szTitle.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    GlobalhWnd = CreateWindow(szWindowClass.c_str(), szTitle.c_str(), WS_OVERLAPPEDWINDOW | WS_MAXIMIZE, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
-    //if(!hWnd)
+    if(!GlobalhWnd)
     {
         return FALSE;
     }
 
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
+
+    ShowWindow(GlobalhWnd, SW_MAXIMIZE);
+    UpdateWindow(GlobalhWnd);
+
+    InitGraff();
 
     return TRUE;
 }
@@ -91,13 +93,14 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 }
 
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
+int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
     MSG msg;
     try
     {
+        hInstance = hInst;
         MyRegisterClass(hInstance);
-        if(!InitInstance (hInstance, nCmdShow))
+        if(!InitInstance ())
             throw std::runtime_error("!InitInstance");
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_KPVLGRAF));
@@ -112,8 +115,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 DispatchMessage(&msg);
             }
         }
-    }CATCH("Error1", "Error2");
+    }CATCH("All Log", "Error:");
 
-    return (int)msg.wParam;
+    return (int)0;
 }
 
