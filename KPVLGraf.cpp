@@ -63,7 +63,6 @@ BOOL InitInstance()
         return FALSE;
     }
 
-
     ShowWindow(GlobalhWnd, SW_MAXIMIZE);
     UpdateWindow(GlobalhWnd);
 
