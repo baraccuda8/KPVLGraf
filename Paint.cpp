@@ -1,7 +1,7 @@
 #include "framework.h"
 #include "KPVLGraf.h"
+#include "GdiPlusInit.h"
 #include "Paint.h"
-
 
 HWND hWndGraff = NULL;
 
@@ -26,7 +26,7 @@ LRESULT CALLBACK GrafWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void MyRegisterClass()
+void GraffRegisterClass()
 {
     WNDCLASSEX cex0 ={0};
     cex0.cbSize = sizeof(WNDCLASSEX);
@@ -48,7 +48,7 @@ void MyRegisterClass()
 
 void InitGraff()
 {
-        MyRegisterClass();
+        GraffRegisterClass();
         RECT rc;
         GetClientRect(GlobalhWnd, &rc);
         //GetWindowRect(GlobalhWnd, &rc2);

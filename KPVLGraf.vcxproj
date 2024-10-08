@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClInclude Include="About.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GdiPlusInit.h" />
     <ClInclude Include="KPVLGraf.h" />
     <ClInclude Include="Paint.h" />
     <ClInclude Include="Resource.h" />
@@ -174,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="About.cpp" />
+    <ClCompile Include="GdiPlusInit.cpp" />
     <ClCompile Include="KPVLGraf.cpp" />
     <ClCompile Include="Paint.cpp" />
   </ItemGroup>

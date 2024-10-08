@@ -17,6 +17,7 @@
 
 #include "KPVLGraf.h"
 #include "About.h"
+#include "GdiPlusInit.h"
 #include "Paint.h"
 
 #define MAX_LOADSTRING 100
@@ -99,6 +100,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
     try
     {
         hInstance = hInst;
+
+        if(!GdiPlusInit.Good())
+            throw std::runtime_error("Not Init GdiPlus");
+
+
         MyRegisterClass(hInstance);
         if(!InitInstance ())
             throw std::runtime_error("!InitInstance");

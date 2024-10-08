@@ -28,15 +28,15 @@
 
 #include <gdiplus.h>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
-#include <boost/format.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
-#include <algorithm>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/range/adaptor/indexed.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+//#include <boost/algorithm/string.hpp>
+//#include <boost/format.hpp>
+//#include <boost/format.hpp>
+//#include <boost/filesystem.hpp>
+//#include <boost/regex.hpp>
+//#include <algorithm>
+//#include <boost/algorithm/string/replace.hpp>
+//#include <boost/range/adaptor/indexed.hpp>
+//#include <boost/iostreams/filtering_streambuf.hpp>
+//#include <boost/iostreams/copy.hpp>
+//#include <boost/iostreams/filter/zlib.hpp>
 
