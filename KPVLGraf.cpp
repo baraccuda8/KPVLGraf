@@ -17,6 +17,8 @@
 
 #include "KPVLGraf.h"
 #include "About.h"
+#include "SQL.h"
+
 #include "GdiPlusInit.h"
 #include "Paint.h"
 
@@ -27,7 +29,89 @@ HWND GlobalhWnd = NULL;
 HINSTANCE hInstance = NULL;                                // текущий экземпляр
 std::string szTitle = "KPVLGraf";                  // Текст строки заголовка
 std::string szWindowClass = "KPVLGraf";            // имя класса главного окна
+std::string CurrentDirPatch = "";
+std::string strPatchFileName = "";
 
+
+BOOL CenterWindow(HWND hwndChild, HWND hwndParent)
+{
+    RECT rcChild, rcParent;
+    int  cxChild, cyChild, cxParent, cyParent, cxScreen, cyScreen, xNew, yNew;
+    HDC  hdc;
+
+    GetWindowRect(hwndChild, &rcChild);
+    cxChild = rcChild.right - rcChild.left;
+    cyChild = rcChild.bottom - rcChild.top;
+
+    if(hwndParent)
+    {
+        GetWindowRect(hwndParent, &rcParent);
+        cxParent = rcParent.right - rcParent.left;
+        cyParent = rcParent.bottom - rcParent.top;
+    }
+    else
+    {
+        cxParent = GetSystemMetrics(SM_CXMAXIMIZED);
+        cyParent = GetSystemMetrics(SM_CYMAXIMIZED);
+        rcParent.left = 0;
+        rcParent.top = 0;
+    }
+
+    hdc = GetDC(hwndChild);
+    cxScreen = GetDeviceCaps(hdc, HORZRES);
+    cyScreen = GetDeviceCaps(hdc, VERTRES);
+    ReleaseDC(hwndChild, hdc);
+
+    xNew = rcParent.left + (cxParent - cxChild) / 2;
+    if(xNew < 0)xNew = 0; else if((xNew + cxChild) > cxScreen) xNew = cxScreen - cxChild;
+
+    yNew = rcParent.top + (cyParent - cyChild) / 2;
+    if(yNew < 0)yNew = 0; else if((yNew + cyChild) > cyScreen) yNew = cyScreen - cyChild;
+    return SetWindowPos(hwndChild, NULL, xNew, yNew, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+}
+
+
+
+
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::string s3)
+{
+    time_t st = time(0);
+    std::tm TM;
+    localtime_s(&TM, &st);
+    char sFormat[1024];
+    if(l == LOGLEVEL::LEVEL_INFO)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [INFO] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else //if(l == LOGLEVEL::LEVEL_ERROR)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [ERROR] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+
+    std::string file = f + ".log";
+    std::ofstream F(file.c_str(), std::ios::binary | std::ios::out | std::ios::app);
+    if(F.is_open())
+    {
+        F << sFormat << s1 << " -> " << s2 << " " << s3 << std::endl;
+        F.close();
+    }
+}
+
+//Вывод строки ошибки выполнения программы
+int WinErrorExit(HWND hWnd, const char* lpszFunction)
+{
+    LPVOID lpMsgBuf;
+    LPVOID lpDisplayBuf;
+    DWORD dw = GetLastError();
+
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
+    StringCchPrintf((LPTSTR)lpDisplayBuf, LocalSize(lpDisplayBuf) / sizeof(TCHAR), TEXT("%s\r\nfailed with error %d:\r\n%s"), lpszFunction, dw, lpMsgBuf);
+
+    //if(AllLogger) AllLogger->error(std::string((char*)lpDisplayBuf));
+    //MessageBox(hWnd, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK | MB_SYSTEMMODAL | MB_ICONERROR);
+    DenugInfo(LOGLEVEL::LEVEL_ERROR, ALL_LOG, FUNCTION_LINE_NAME, (char*)lpDisplayBuf);
+    LocalFree(lpMsgBuf);
+    LocalFree(lpDisplayBuf);
+    PostQuitMessage(0);
+    return 1;
+}
 
 LRESULT Quit()
 {
@@ -92,13 +176,39 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassEx(&cex);
 }
 
+void CurrentDir()
+{
+    char ss[256] = "";
+    GetModuleFileNameA(NULL, ss, 255);
+    char ss2[256];
+    strcpy_s(ss2, 256, ss);
+    char* s1 = ss2;
+    char* s2 = NULL;
+    while(s1 && *s1)
+    {
+        if(*s1 == '\\')s2 = s1;
+        s1++;
+    }
+    if(s2)
+    {
+        *s2 = 0;
+        SetCurrentDirectory(ss2);
+        CurrentDirPatch = ss2;
+    }
+    strPatchFileName = std::string(ss);
+}
+
+#define ALL_LOG_REM (std::string(ALL_LOG) + ".log").c_str()
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
     MSG msg;
+    CurrentDir();
     try
     {
         hInstance = hInst;
+        remove(ALL_LOG_REM);
+
 
         if(!GdiPlusInit.Good())
             throw std::runtime_error("Not Init GdiPlus");
@@ -110,6 +220,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
 
         HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_KPVLGRAF));
 
+        if(!InitSQL())
+        {
+            MessageBox(NULL, "Ошибка соединения с базой!", "Ошибка!", MB_SYSTEMMODAL | MB_ICONERROR | MB_OK);
+            throw std::runtime_error("!InitSQL");
+        }
 
         // Цикл основного сообщения:
         while(GetMessage(&msg, nullptr, 0, 0))
@@ -120,7 +235,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
                 DispatchMessage(&msg);
             }
         }
-    }CATCH("All Log", "Error:");
+    }CATCH(ALL_LOG, "Error:");
 
     return (int)0;
 }

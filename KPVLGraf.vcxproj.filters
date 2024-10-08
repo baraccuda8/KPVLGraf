@@ -36,6 +36,12 @@
     <ClInclude Include="GdiPlusInit.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="SQL.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Value.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="KPVLGraf.cpp">
@@ -48,6 +54,12 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="GdiPlusInit.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SQL.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Value.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

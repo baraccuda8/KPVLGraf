@@ -2,34 +2,81 @@
 
 #include "resource.h"
 
+#define ALL_LOG "All Log"
+
 extern HWND GlobalhWnd;
 extern HINSTANCE hInstance;
 
 extern std::string szWindowClass;
 
+enum class LOGLEVEL{
+    LEVEL_INFO = 0,
+    LEVEL_ERROR = 1,
+};
+
 #define FUNCTION_LINE_NAME (std::string( __FUNCTION__ ) + std::string (":") + std::to_string(__LINE__))
 
-#define LOG_ERROR(s1, _s2, _s3)DenugInfo(_s1, _s2,  s3);
+#define LOG_ERROR(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_ERROR, _s1, _s2, _s3);
+#define LOG_INFO(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_INFO, _s1, _s2, _s3);
+
+#define LOG_ERR_SQL(_l, _r, _c){\
+LOG_ERROR(_l, FUNCTION_LINE_NAME, _c);\
+LOG_ERROR(_l, FUNCTION_LINE_NAME, utf8_to_cp1251(PQresultErrorMessage(_r)));\
+}\
+
 
 #define CATCH(_l, _s) \
-    catch(std::filesystem::filesystem_error& exc) { DenugInfo(_l, FUNCTION_LINE_NAME, std::string(_s),  exc.what());} \
-    catch(std::runtime_error& exc){DenugInfo(_l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
-    catch(std::exception& exc){DenugInfo(_l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
-    catch(...){DenugInfo(_l, FUNCTION_LINE_NAME, std::string(_s), "Unknown error");}
+    catch(std::filesystem::filesystem_error& exc) { DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s),  exc.what());} \
+    catch(std::runtime_error& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
+    catch(std::exception& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
+    catch(...){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), "Unknown error");}
 
-inline void DenugInfo(std::string f, std::string s1, std::string s2, std::string s3)
+LRESULT Quit();
+
+//Вывод строки ошибки выполнения программы
+int WinErrorExit(HWND hWnd, const char* lpszFunction);
+
+//Вывод окна в центр родительского окна
+BOOL CenterWindow(HWND hwndChild, HWND hwndParent);
+
+
+
+
+//Вывод в файл отладочной ингформации
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::string s3 = "");
+
+
+inline int Stoi(std::string input)
 {
-    time_t st = time(0);
-    std::tm TM;
-    localtime_s(&TM, &st);
-    char sFormat[1024];
-    sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
-
-    std::string file = f + ".log";
-    std::ofstream F(file.c_str(), std::ios::binary | std::ios::out | std::ios::app);
-    if(F.is_open())
+    std::optional<int> out = 0;
+    try
     {
-        F << sFormat << s1 << " -> " << s2 << " " << s3 << std::endl;
-        F.close();
+        return std::stoi(input);
     }
+    catch(...) {}
+    return 0;
 }
+
+inline float Stof(std::string input)
+{
+    try
+    {
+        return std::stof(input);
+    }
+    catch(...) {}
+    return 0.0f;
+}
+
+inline double Stod(std::string input)
+{
+    try
+    {
+        return std::stod(input);
+    }
+    catch(...) {}
+    return 0.0;
+}
+
+
+std::string cp1251_to_utf8(std::string str);
+std::string utf8_to_cp1251(std::string str);
