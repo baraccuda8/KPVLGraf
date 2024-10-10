@@ -1,6 +1,5 @@
 #include "framework.h"
 #include "KPVLGraf.h"
-#include "Value.h"
 
 #include "SQL.h"
 
@@ -10,13 +9,13 @@
 //Соединение с SQL базой
 PGConnection conn_spis;
 
-
-std::string m_dbhost = "192.168.9.63";
+#pragma region Данные для подключения
+std::string m_dbhost = "localhost";
 std::string m_dbport = "5432";
-std::string m_dbname = "kpvl";
-std::string m_dbuser = "user";
-std::string m_dbpass = "TutonHamon8*";
-
+std::string m_dbname = "";
+std::string m_dbuser = "";
+std::string m_dbpass = "";
+#pragma endregion
 
 namespace CollTag{
     int Id = 0;
@@ -32,209 +31,38 @@ namespace CollTag{
 }
 
 
-VALUE AllTagKpvl;
-VALUE AllTagPeth;
 
-VALUE HMISheetData;
-//VALUE AI_Hmi_210;
-struct T_AI_Hmi_210{
-    //REAL Давление воды закалка коллектор низ
-    Value LaminPressBot = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.LaminPressBot.AI_eu");
+#pragma region Закалочная печи 
+std::string PLC210APPL = "|var|PLC210 OPC-UA.Application.";
 
-    //REAL Давление воды закалка коллектор верх
-    Value LaminPressTop = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.LaminPressTop.AI_eu");
+T_AI_Hmi_210 AI_Hmi_210 = T_AI_Hmi_210(PLC210APPL + "AI_Hmi_210.Hmi.");
+T_Hmi210_1 Hmi210_1 = T_Hmi210_1(PLC210APPL + "Hmi210_1.");
+T_GenSeqFromHmi GenSeqFromHmi = T_GenSeqFromHmi (PLC210APPL + "GenSeqFromHmi.Data.");
+T_GenSeqToHmi GenSeqToHmi = T_GenSeqToHmi(PLC210APPL + "GenSeqToHmi.Data.");
+T_Par_Gen Par_Gen = T_Par_Gen(PLC210APPL + "Par_Gen.Par.");
 
-    //REAL Температура воды в поддоне
-    Value LAM_TE1 = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.LAM_TE1.AI_eu");
-
-    //REAL Температура воды в баке
-    Value Za_PT3 = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.Za_PT3.AI_eu");
-
-    //REAL Температура воды в баке
-    Value Za_TE3 = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.Za_TE3.AI_eu");
-
-    //REAL Пирометр
-    Value Za_TE4 = Value("|var|PLC210 OPC-UA.Application.AI_Hmi_210.Hmi.Za_TE4.AI_eu");
-}AI_Hmi_210;
-
-struct T_GenSeqFromHmi{
-    //REAL Уставки температуры в печи
-    Value TempSet1 = Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.TempSet1");
-}GenSeqFromHmi;
-
-struct T_GenSeqToHmi{
-    //REAL Сколько прошло времени охлаждения
-    Value CoolTimeAct = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.CoolTimeAct");
-
-    //REAL время нагрева в зоне 1
-    Value HeatTime_Z1 = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.HeatTime_Z1");
-
-    //REAL время нагрева в зоне 2
-    Value HeatTime_Z2 = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.HeatTime_Z2");
-
-    //INT Номер шага последовательности загрузки в печь
-    Value Seq_1_StateNo = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.Seq_1_StateNo");
-
-    //INT Номер шага последовательности выгрузки в печи
-    Value Seq_2_StateNo = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.Seq_2_StateNo");
-
-    //INT Номер шага последовательности обработки в ламинарке
-    Value Seq_3_StateNo = Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.Seq_3_StateNo");
-
-}GenSeqToHmi;
-
-//VALUE GenSeqToHmi;
-//VALUE Par_Gen;
-
-struct T_Par_Gen {
-
-    //REAL Уставка давления для запуска комперссора
-    Value PresToStartComp = Value("|var|PLC210 OPC-UA.Application.Par_Gen.Par.PresToStartComp");
-
-    //REAL Время сигнализации окончания нагрева, мин
-    Value TimeForPlateHeat = Value("|var|PLC210 OPC-UA.Application.Par_Gen.Par.TimeForPlateHeat");
-
-    //REAL Скорость выгрузки
-    Value UnloadSpeed = Value("|var|PLC210 OPC-UA.Application.Par_Gen.Par.UnloadSpeed");
-}Par_Gen;
-
-
-typedef struct T_PlateData{
-    //Char Код марки
-    Value AlloyCodeText;
-
-    //DINT номер плавки
-    Value Melt;
-
-    //DINT Пачка
-    Value Pack;
-
-    //DINT номер партии
-    Value PartNo;
-
-    //DINT номер листа
-    Value Sheet;
-
-    //DINT Номер сляба
-    Value Slab;
-
-    //DINT подномер листа
-    Value SubSheet;
-
-    //Char код толщины. Зависит от марки стали.
-    Value ThiknessText;
+T_PlateData PlateData[SheetMaxPos] = {
+    T_PlateData(PLC210APPL + "GenSeqFromHmi.Data.PlateData."),
+    T_PlateData(PLC210APPL + "GenSeqToHmi.Data.PlateData_Z1."),
+    T_PlateData(PLC210APPL + "GenSeqToHmi.Data.PlateData_Z2."),
+    T_PlateData(PLC210APPL + "GenSeqToHmi.Data.PlateData_Z3."),
+    T_PlateData(PLC210APPL + "GenSeqToHmi.Data.PlateData_Z4."),
+    T_PlateData(PLC210APPL + "GenSeqToHmi.Data.PlateData_Z5."),
+    T_PlateData(PLC210APPL + "HMISheetData.Sheet.SheetDataIN.")
 };
 
-T_PlateData PlateData_Z0 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqFromHmi.Data.PlateData.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z1 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z1.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z2 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z2.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z3 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z3.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z4 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z4.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z5 ={
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.GenSeqToHmi.Data.PlateData_Z5.ThiknessText.sText"),
-};
-T_PlateData PlateData_Z6 ={
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.AlloyCodeText.sText"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.Melt"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.Pack"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.PartNo"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.Sheet"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.Slab"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.SubSheet"),
-    Value("|var|PLC210 OPC-UA.Application.HMISheetData.Sheet.SheetDataIN.ThiknessText.sText"),
-};
-
-//VALUE PlateData_Z1;
-//VALUE PlateData_Z2;
-//VALUE PlateData_Z3;
-//VALUE PlateData_Z4;
-//VALUE PlateData_Z5;
-//VALUE PlateData_Z6;
+T_HMISheetData HMISheetData = T_HMISheetData(PLC210APPL + "HMISheetData.Sheet.");
+#pragma endregion
 
 
-struct T_Hmi210_1{
-    //REAL Температура в зоне 1.1
-    Value Htr1_1 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr_1.ToHmi.TAct");
+#pragma region Печи отпуска 
+std::string SPK107APPL = "|var|SPK107 (M01).Application.";
 
-    //REAL Температура в зоне 1.2
-    Value Htr1_2 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr_2.ToHmi.TAct");
+T_Furn Furn_1 = T_Furn(SPK107APPL + "ForBase_RelFurn_1.Data.");
+T_Furn Furn_2 = T_Furn(SPK107APPL + "ForBase_RelFurn_2.Data.");
 
-    //REAL Температура в зоне 1.3
-    Value Htr1_3 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr_3.ToHmi.TAct");
-
-    //REAL Температура в зоне 1.4
-    Value Htr1_4 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr_4.ToHmi.TAct");
-
-    //REAL Температура в зоне 2.1
-    Value Htr2_1 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr2_1.ToHmi.TAct");
-
-    //REAL Температура в зоне 2.2
-    Value Htr2_2 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr2_2.ToHmi.TAct");
-
-    //REAL Температура в зоне 2.3
-    Value Htr2_3 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr2_3.ToHmi.TAct");
-
-    //REAL Температура в зоне 2.4
-    Value Htr2_4 = Value ("|var|PLC210 OPC-UA.Application.Hmi210_1.Htr2_4.ToHmi.TAct");
-}Hmi210_1;
-
-VALUE Furn_1;
-VALUE Furn_2;
-
-
-
+T_CassetteArray CassetteArray = T_CassetteArray(SPK107APPL + "cassetteArray.data.");
+#pragma endregion
 
 std::string cp1251_to_utf8(std::string str)
 {
@@ -295,6 +123,65 @@ std::string utf8_to_cp1251(std::string str)
 
 namespace LoginDlg
 {
+#define SQLFileName "PostgreSQL.dat"
+
+    std::string pKey = "хабраbarracudabarracudaхабра";
+    char sCommand[0xFFFF];
+    char sCommand2[0xFFFF];
+
+
+    void encode(char* pText, size_t len)
+    {
+        for(size_t i = 0; i < len; i++)
+            pText[i] = (byte)(pText[i] ^ pKey[i % pKey.length()]);
+    }
+
+    void SaveConnect()
+    {
+        std::stringstream pass;
+        pass << m_dbhost << std::endl
+            << m_dbport << std::endl
+            << m_dbname << std::endl
+            << m_dbuser << std::endl
+            << m_dbpass;
+
+        std::string p = pass.str();
+        memset(sCommand2, 0, 0xFFFF);
+        strcpy_s(sCommand2, 255, p.c_str());;
+        encode(sCommand2, p.length());
+
+        std::ofstream s(SQLFileName, std::ios::binary | std::ios::out | std::ios::trunc);
+        if(s.is_open())
+        {
+            s.write(sCommand2, p.length());
+            s.close();
+        }
+    }
+
+    bool LoadConnect()
+    {
+        memset(sCommand2, 0, 0xFFFF);
+        std::ifstream s(SQLFileName, std::ios::binary | std::ios::in);
+        if(s.is_open())
+        {
+            s.read(sCommand2, 1024);
+            int len = (int)s.gcount();
+            s.close();
+            encode(sCommand2, len);
+            std::vector <std::string>split;
+            boost::split(split, sCommand2, boost::is_any_of("\n"));
+            if(split.size() == 5)
+            {
+                m_dbhost = split[0];
+                m_dbport = split[1];
+                m_dbname = split[2];
+                m_dbuser = split[3];
+                m_dbpass = split[4];
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
 
     INT_PTR InitDialog(HWND hWnd)
     {
@@ -321,8 +208,12 @@ namespace LoginDlg
             conn_spis.Connection();
             if(conn_spis.connections)
             {
-                //SaveConnect();
+                SaveConnect();
                 EndDialog(hWnd, FALSE);
+            }
+            else
+            {
+                MessageBox(NULL, "Ошибка соединения с базой!", "Ошибка!", MB_SYSTEMMODAL | MB_ICONERROR | MB_OK);
             }
         }
         if(wParam == IDCANCEL)
@@ -342,128 +233,17 @@ namespace LoginDlg
 };
 
 
-void SetValue(Value& val)
-{
-    try
-    {
-             if(val.Type == VariantType::BOOLEAN)   val.Val = (bool)(val.content == "true");      // atoi_t(bool, atoi, value);
-        else if(val.Type == VariantType::SBYTE)     val.Val = int8_t((std::stoi(val.content)) / (int8_t)val.coeff);
-        else if(val.Type == VariantType::BYTE)      val.Val = uint8_t((std::stoi(val.content)) / (uint8_t)val.coeff);
-        else if(val.Type == VariantType::INT16)     val.Val = int16_t((std::stoi(val.content)) / (int16_t)val.coeff);
-        else if(val.Type == VariantType::UINT16)    val.Val = uint16_t((std::stoi(val.content)) / (uint16_t)val.coeff);
-        else if(val.Type == VariantType::INT32)     val.Val = int32_t((std::stoi(val.content)) / (int32_t)val.coeff);
-        else if(val.Type == VariantType::UINT32)    val.Val = uint32_t((std::stoll(val.content)) / (uint32_t)val.coeff);
-        else if(val.Type == VariantType::INT64)     val.Val = int64_t((std::stoll(val.content)) / (int64_t)val.coeff);
-        else if(val.Type == VariantType::UINT64)    val.Val = uint64_t((std::stod(val.content)) / (uint64_t)val.coeff);
-        else if(val.Type == VariantType::FLOAT)     val.Val = float((std::stof(val.content)) / (float)val.coeff);
-        else if(val.Type == VariantType::DOUBLE)    val.Val = double((std::stod(val.content)) / (double)val.coeff);
-        else if(val.Type == VariantType::STRING)    val.Val =  cp1251_to_utf8(val.content); // utf8_to_cp1251(value); //cp1251_to_utf8
-        val.GetString();
-    }CATCH(SQL_LOG, "");
-}
 
-std::string GetType(VariantType type, std::string value)
-{
-    try
-    {
-        if(type == VariantType::BOOLEAN)   return "(bool)" + value;
-        else if(type == VariantType::SBYTE)     return "(int8_t)" + value;
-        else if(type == VariantType::BYTE)      return "(uint8_t)" + value;
-        else if(type == VariantType::INT16)     return "(int16_t)" + value;
-        else if(type == VariantType::UINT16)    return "(uint16_t)" + value;
-        else if(type == VariantType::INT32)     return "(int32_t)" + value;
-        else if(type == VariantType::UINT32)    return "(uint32_t)" + value;
-        else if(type == VariantType::INT64)     return "(int64_t)" + value;
-        else if(type == VariantType::UINT64)    return "(uint64_t)" + value;
-        else if(type == VariantType::FLOAT)     return "(float)" + value;
-        else if(type == VariantType::DOUBLE)    return "(double)" + value;
-        else if(type == VariantType::STRING)    return "std::string(\"" + value + "\")";
-    }CATCH(SQL_LOG, "");
-    return "";
-}
-
-void GetTagTable(VALUE& All, std::string Patch, PGresult* res, int l, std::ofstream& ofs)
-{
-    try
-    {
-        Value val;
-        val.Patch = Patch;
-        val.ID = atol(conn_spis.PGgetvalue(res, l, CollTag::Id).c_str());
-        val.Arhive = conn_spis.PGgetvalue(res, l, CollTag::Arhive) == "t";
-        val.Comment = conn_spis.PGgetvalue(res, l, CollTag::Comment);
-        val.coeff = static_cast<float>(atof(conn_spis.PGgetvalue(res, l, CollTag::Coeff).c_str()));
-        val.hist = static_cast<float>(atof(conn_spis.PGgetvalue(res, l, CollTag::Hist).c_str()));
-        val.format = conn_spis.PGgetvalue(res, l, CollTag::Format);
-
-        val.Type =  static_cast<VariantType>(Stoi(conn_spis.PGgetvalue(res, l, CollTag::Type)));
-        val.content = conn_spis.PGgetvalue(res, l, CollTag::Content);
-        SetValue(val);
-
-        All.push_back(val);
-
-        //boost::replace_all(value, ".", ",");
-        if(!ofs.bad())
-        {
-            ofs << val.ID << ";";
-            ofs << "\"\"\"" << val.Patch << "\"\"\";";
-            ofs << (int)val.GetType() << ";";
-            ofs << val.Arhive << ";";
-            ofs << "\"\"\"" << val.Comment << "\"\"\";";
-            ofs << GetType(val.Type, val.GetString()) << ";";
-            ofs << val.coeff << ";";
-            ofs << val.hist << ";";
-            ofs << "\"\"\"" << val.format << "\"\"\";";
-            ofs << std::endl;
-        }
-    }CATCH(SQL_LOG, "");
-}
-
-
-void GetTagTable(Value& val, /*std::string Patch, */PGresult* res, int l, std::ofstream& ofs)
-{
-    try
-    {
-        //Value val;
-        //val.Patch = Patch;
-        val.ID = atol(conn_spis.PGgetvalue(res, l, CollTag::Id).c_str());
-        val.Arhive = conn_spis.PGgetvalue(res, l, CollTag::Arhive) == "t";
-        val.Comment = conn_spis.PGgetvalue(res, l, CollTag::Comment);
-        val.coeff = static_cast<float>(atof(conn_spis.PGgetvalue(res, l, CollTag::Coeff).c_str()));
-        val.hist = static_cast<float>(atof(conn_spis.PGgetvalue(res, l, CollTag::Hist).c_str()));
-        val.format = conn_spis.PGgetvalue(res, l, CollTag::Format);
-
-        val.Type =  static_cast<VariantType>(Stoi(conn_spis.PGgetvalue(res, l, CollTag::Type)));
-        val.content = conn_spis.PGgetvalue(res, l, CollTag::Content);
-        SetValue(val);
-
-        //All.push_back(val);
-
-        //boost::replace_all(value, ".", ",");
-        if(!ofs.bad())
-        {
-            ofs << val.ID << ";";
-            ofs << "\"\"\"" << val.Patch << "\"\"\";";
-            ofs << (int)val.GetType() << ";";
-            ofs << val.Arhive << ";";
-            ofs << "\"\"\"" << val.Comment << "\"\"\";";
-            ofs << GetType(val.Type, val.GetString()) << ";";
-            ofs << val.coeff << ";";
-            ofs << val.hist << ";";
-            ofs << "\"\"\"" << val.format << "\"\"\";";
-            ofs << std::endl;
-        }
-    }CATCH(SQL_LOG, "");
-}
 
 void InitCurentTag()
 {
     try
     {
-#pragma region SELECT id, name, type, arhive, comment, content, coeff, hist, format, idsec FROM tag ORDER BY id
-        std::ofstream ofs("all_tag.csv", std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-        ofs << "id;name;type;arhive;comment;content;coeff;hist;format" << std::endl;
+#pragma region SELECT FROM tag
         std::string comand = "SELECT id, name, type, arhive, comment, content, coeff, hist, format, idsec FROM tag ORDER BY id;";
         PGresult* res = conn_spis.PGexec(comand);
+#pragma endregion
+
         if(PQresultStatus(res) == PGRES_TUPLES_OK)
         {
             if(!CollTag::Idsec)
@@ -488,198 +268,40 @@ void InitCurentTag()
             int line = PQntuples(res);
             for(int l = 0; l < line; l++)
             {
-                std::string Patch = conn_spis.PGgetvalue(res, l, CollTag::Name);
-                if(Patch.find("PLC210") != std::string::npos)
+                std::string Arhive = PGgetvalue(res, l, CollTag::Arhive);
+                if(Arhive == "t") //Если ведется архив
                 {
-                    if(Patch == PlateData_Z0.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z0.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z0.Melt.Patch)
-                        GetTagTable(PlateData_Z0.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z0.Pack.Patch)
-                        GetTagTable(PlateData_Z0.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z0.PartNo.Patch)
-                        GetTagTable(PlateData_Z0.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z0.Sheet.Patch)
-                        GetTagTable(PlateData_Z0.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z0.Slab.Patch)
-                        GetTagTable(PlateData_Z0.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z0.SubSheet.Patch)
-                        GetTagTable(PlateData_Z0.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z0.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z0.ThiknessText, res, l, ofs);
+                    std::string Patch = PGgetvalue(res, l, CollTag::Name);
 
-                    else if(Patch == PlateData_Z1.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z1.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z1.Melt.Patch)
-                        GetTagTable(PlateData_Z1.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z1.Pack.Patch)
-                        GetTagTable(PlateData_Z1.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z1.PartNo.Patch)
-                        GetTagTable(PlateData_Z1.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z1.Sheet.Patch)
-                        GetTagTable(PlateData_Z1.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z1.Slab.Patch)
-                        GetTagTable(PlateData_Z1.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z1.SubSheet.Patch)
-                        GetTagTable(PlateData_Z1.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z1.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z1.ThiknessText, res, l, ofs);
+                    if(PlateData[SheetPos0].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos1].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos2].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos3].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos4].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos5].GetTagTable(res, Patch, l)) continue;
+                    if(PlateData[SheetPos6].GetTagTable(res, Patch, l)) continue;
+                    if(Par_Gen.GetTagTable(res, Patch, l)) continue;
+                    if(Hmi210_1.GetTagTable(res, Patch, l)) continue;
+                    if(GenSeqToHmi.GetTagTable(res, Patch, l)) continue;
+                    if(GenSeqToHmi.GetTagTable(res, Patch, l)) continue;
+                    if(GenSeqFromHmi.GetTagTable(res, Patch, l)) continue;
+                    if(AI_Hmi_210.GetTagTable(res, Patch, l)) continue;
+                    if(HMISheetData.GetTagTable(res, Patch, l)) continue;
 
-                    else if(Patch == PlateData_Z2.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z2.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z2.Melt.Patch)
-                        GetTagTable(PlateData_Z2.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z2.Pack.Patch)
-                        GetTagTable(PlateData_Z2.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z2.PartNo.Patch)
-                        GetTagTable(PlateData_Z2.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z2.Sheet.Patch)
-                        GetTagTable(PlateData_Z2.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z2.Slab.Patch)
-                        GetTagTable(PlateData_Z2.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z2.SubSheet.Patch)
-                        GetTagTable(PlateData_Z2.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z2.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z2.ThiknessText, res, l, ofs);
+                    if(Furn_1.GetTagTable(res, Patch, l)) continue;
+                    if(Furn_2.GetTagTable(res, Patch, l)) continue;
 
-                    else if(Patch == PlateData_Z3.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z3.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z3.Melt.Patch)
-                        GetTagTable(PlateData_Z3.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z3.Pack.Patch)
-                        GetTagTable(PlateData_Z3.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z3.PartNo.Patch)
-                        GetTagTable(PlateData_Z3.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z3.Sheet.Patch)
-                        GetTagTable(PlateData_Z3.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z3.Slab.Patch)
-                        GetTagTable(PlateData_Z3.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z3.SubSheet.Patch)
-                        GetTagTable(PlateData_Z3.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z3.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z3.ThiknessText, res, l, ofs);
-
-                    else if(Patch == PlateData_Z4.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z4.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z4.Melt.Patch)
-                        GetTagTable(PlateData_Z4.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z4.Pack.Patch)
-                        GetTagTable(PlateData_Z4.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z4.PartNo.Patch)
-                        GetTagTable(PlateData_Z4.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z4.Sheet.Patch)
-                        GetTagTable(PlateData_Z4.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z4.Slab.Patch)
-                        GetTagTable(PlateData_Z4.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z4.SubSheet.Patch)
-                        GetTagTable(PlateData_Z4.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z4.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z4.ThiknessText, res, l, ofs);
-
-                    else if(Patch == PlateData_Z5.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z5.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z5.Melt.Patch)
-                        GetTagTable(PlateData_Z5.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z5.Pack.Patch)
-                        GetTagTable(PlateData_Z5.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z5.PartNo.Patch)
-                        GetTagTable(PlateData_Z5.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z5.Sheet.Patch)
-                        GetTagTable(PlateData_Z5.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z5.Slab.Patch)
-                        GetTagTable(PlateData_Z5.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z5.SubSheet.Patch)
-                        GetTagTable(PlateData_Z5.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z5.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z5.ThiknessText, res, l, ofs);
-
-                    else if(Patch == PlateData_Z6.AlloyCodeText.Patch)
-                        GetTagTable(PlateData_Z6.AlloyCodeText, res, l, ofs);
-                    else if(Patch == PlateData_Z6.Melt.Patch)
-                        GetTagTable(PlateData_Z6.Melt, res, l, ofs);
-                    else if(Patch == PlateData_Z6.Pack.Patch)
-                        GetTagTable(PlateData_Z6.Pack, res, l, ofs);
-                    else if(Patch == PlateData_Z6.PartNo.Patch)
-                        GetTagTable(PlateData_Z6.PartNo, res, l, ofs);
-                    else if(Patch == PlateData_Z6.Sheet.Patch)
-                        GetTagTable(PlateData_Z6.Sheet, res, l, ofs);
-                    else if(Patch == PlateData_Z6.Slab.Patch)
-                        GetTagTable(PlateData_Z6.Slab, res, l, ofs);
-                    else if(Patch == PlateData_Z6.SubSheet.Patch)
-                        GetTagTable(PlateData_Z6.SubSheet, res, l, ofs);
-                    else if(Patch == PlateData_Z6.ThiknessText.Patch)
-                        GetTagTable(PlateData_Z6.ThiknessText, res, l, ofs);
-
-                    else if(Patch == Par_Gen.PresToStartComp.Patch)
-                        GetTagTable(Par_Gen.PresToStartComp, res, l, ofs);
-                    else if(Patch == Par_Gen.TimeForPlateHeat.Patch)
-                        GetTagTable(Par_Gen.TimeForPlateHeat, res, l, ofs);
-                    else if(Patch == Par_Gen.UnloadSpeed.Patch)
-                        GetTagTable(Par_Gen.UnloadSpeed, res, l, ofs);
-
-                    else if(Patch == Hmi210_1.Htr1_1.Patch)
-                        GetTagTable(Hmi210_1.Htr1_1, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr1_2.Patch)
-                        GetTagTable(Hmi210_1.Htr1_2, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr1_3.Patch)
-                        GetTagTable(Hmi210_1.Htr1_3, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr1_4.Patch)
-                        GetTagTable(Hmi210_1.Htr1_4, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr2_1.Patch)
-                        GetTagTable(Hmi210_1.Htr2_1, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr2_2.Patch)
-                        GetTagTable(Hmi210_1.Htr2_2, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr2_3.Patch)
-                        GetTagTable(Hmi210_1.Htr2_3, res, l, ofs);
-                    else if(Patch == Hmi210_1.Htr2_4.Patch)
-                        GetTagTable(Hmi210_1.Htr2_4, res, l, ofs);
-
-                    else if(Patch == GenSeqToHmi.CoolTimeAct.Patch)
-                        GetTagTable(GenSeqToHmi.CoolTimeAct, res, l, ofs);
-                    else if(Patch == GenSeqToHmi.HeatTime_Z1.Patch)
-                        GetTagTable(GenSeqToHmi.HeatTime_Z1, res, l, ofs);
-                    else if(Patch == GenSeqToHmi.HeatTime_Z2.Patch)
-                        GetTagTable(GenSeqToHmi.HeatTime_Z2, res, l, ofs);
-
-                    else if(Patch == GenSeqToHmi.Seq_1_StateNo.Patch)
-                        GetTagTable(GenSeqToHmi.Seq_1_StateNo, res, l, ofs);
-                    else if(Patch == GenSeqToHmi.Seq_2_StateNo.Patch)
-                        GetTagTable(GenSeqToHmi.Seq_2_StateNo, res, l, ofs);
-                    else if(Patch == GenSeqToHmi.Seq_3_StateNo.Patch)
-                        GetTagTable(GenSeqToHmi.Seq_3_StateNo, res, l, ofs);
-
-                    else if(Patch == GenSeqFromHmi.TempSet1.Patch)
-                        GetTagTable(GenSeqFromHmi.TempSet1, res, l, ofs);
-
-                    else if(Patch == AI_Hmi_210.LaminPressBot.Patch)
-                        GetTagTable(AI_Hmi_210.LaminPressBot, res, l, ofs);
-                    else if(Patch == AI_Hmi_210.LaminPressTop.Patch)
-                        GetTagTable(AI_Hmi_210.LaminPressTop, res, l, ofs);
-                    else if(Patch == AI_Hmi_210.LAM_TE1.Patch)
-                        GetTagTable(AI_Hmi_210.LAM_TE1, res, l, ofs);
-                    else if(Patch == AI_Hmi_210.Za_PT3.Patch)
-                        GetTagTable(AI_Hmi_210.Za_PT3, res, l, ofs);
-                    else if(Patch == AI_Hmi_210.Za_TE3.Patch)
-                        GetTagTable(AI_Hmi_210.Za_TE3, res, l, ofs);
-                    else if(Patch == AI_Hmi_210.Za_TE4.Patch)
-                        GetTagTable(AI_Hmi_210.Za_TE4, res, l, ofs);
-
-                    else if(Patch.find("PLC210 OPC-UA.Application.HMISheetData.Sheet.") != std::string::npos)
-                    {
-                        GetTagTable(HMISheetData, Patch, res, l, ofs);
-                        }
-                }
-                else if(Patch.find("SPK107 (M01).Application.ForBase_RelFurn_1.") != std::string::npos)
-                {
-                    GetTagTable(Furn_1, Patch, res, l, ofs);
-                }
-                else if(Patch.find("SPK107 (M01).Application.ForBase_RelFurn_2.") != std::string::npos)
-                {
-                    GetTagTable(Furn_2, Patch, res, l, ofs);
-                }
-                else if(Patch.find("SPK107 (M01)") != std::string::npos)
-                {
-                    GetTagTable(AllTagPeth, Patch, res, l, ofs);
+                    if(CassetteArray.GetTagTable(res, Patch, l)) continue;
+                    //Для всех остальных тегов, если с ними что то не понятно
+                    //else if(Patch.find("PLC210 OPC-UA.Application.HMISheetData.Sheet.") != std::string::npos)
+                    //{
+                    //    GetTagTable(res, HMISheetData_old, Patch, l, ofs);
+                    //}
+                    //Для всех остальных тегов, если с ними что то не понятно
+                    //else if(Patch.find("SPK107 (M01)") != std::string::npos)
+                    //{
+                    //    GetTagTable(res, AllTagPeth, Patch, l, ofs);
+                    //}
                 }
             }
         }
@@ -687,51 +309,17 @@ void InitCurentTag()
             LOG_ERR_SQL(SQL_LOG, res, comand);
         PQclear(res);
 
-        //for(auto& val : AllTagPeth)
-        //{
-        //    if(val->Patch.find("1.Data.ProcRun") != std::string::npos)
-        //    {
-        //        id1ProcRun = val->ID;
-        //    }
-        //    if(val->Patch.find("1.Data.ProcEnd") != std::string::npos)
-        //    {
-        //        id1ProcEnd = val->ID;
-        //    }
-        //    if(val->Patch.find("1.Data.ProcFault") != std::string::npos)
-        //    {
-        //        id1ProcError = val->ID;
-        //    }
-        //    if(val->Patch.find("2.Data.ProcRun") != std::string::npos)
-        //    {
-        //        id2ProcRun = val->ID;
-        //    }
-        //    if(val->Patch.find("2.Data.ProcEnd") != std::string::npos)
-        //    {
-        //        id2ProcEnd = val->ID;
-        //    }
-        //    if(val->Patch.find("2.Data.ProcFault") != std::string::npos)
-        //    {
-        //        id2ProcError = val->ID;
-        //    }
-        //}
-
-        //for(auto& val : AllTagKpvl)
-        //{
-        //    val->UpdateVal();
-        //}
-        //for(auto& val : AllTagPeth)
-        //{
-        //    val->UpdateVal();
-        //}
-
-        //GetPetch(S107::Furn1::Petch, 1);
-        //GetPetch(S107::Furn2::Petch, 2);
-
-
-        //if(!ofs.bad())
-        //    ofs.close();
+#ifdef _DEBUG
+#pragma region open ofstream
+        std::ofstream ofs("all_tag.csv", std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+        ofs << "id;name;type;arhive;comment;content;coeff;hist;format" << std::endl;
+        //Тут надо сделать запись
+        if(!ofs.bad())
+            ofs.close();
 #pragma endregion
+#endif
 
+        int tt = 0;
     }CATCH(SQL_LOG, "");
 }
 
@@ -994,11 +582,18 @@ bool InitSQL()
     try
     {
         remove(SQL_LOG_REM);
-
-        DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, LoginDlg::bagSave);
-        if(!conn_spis.connections && !conn_spis.Connection())
-            throw std::exception("Error SQL conn_spis connection");
-
+        if(!LoginDlg::LoadConnect())
+        {
+            DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, LoginDlg::bagSave);
+            if(!conn_spis.connections && !conn_spis.Connection())
+                throw std::exception("Error SQL conn_spis connection");
+        }
+        else
+        {
+            conn_spis.Connection();
+            if(!conn_spis.connections && !conn_spis.Connection())
+                throw std::exception("Error SQL conn_spis connection");
+        }
         InitTag();
     }
     catch(std::exception& exc)

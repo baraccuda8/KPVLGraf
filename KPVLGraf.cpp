@@ -22,7 +22,6 @@
 #include "GdiPlusInit.h"
 #include "Paint.h"
 
-#define MAX_LOADSTRING 100
 
 // Глобальные переменные:
 HWND GlobalhWnd = NULL;
@@ -198,7 +197,6 @@ void CurrentDir()
     strPatchFileName = std::string(ss);
 }
 
-#define ALL_LOG_REM (std::string(ALL_LOG) + ".log").c_str()
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {

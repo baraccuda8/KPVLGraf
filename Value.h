@@ -30,7 +30,9 @@ enum class VariantType: uint8_t
     DIAGNOSTIC_INFO = 25,
 };
 
-typedef struct Value{
+
+class Value{
+public:
     boost::any Val;
 	int ID = 0;
 	bool Arhive = true;
@@ -183,9 +185,18 @@ typedef struct Value{
     }
 
     Value(){};
-    Value(std::string p){
-        Patch = p;
-    }
-}Value;
+    Value(std::string p) : Patch(p) { }
 
-typedef std::deque<Value> VALUE;
+    bool SaveTagTable(std::ofstream& ofs);
+    bool GetTagTable(PGresult* res, std::string& patch, int l);
+
+
+
+};
+
+//typedef std::deque<Value> VALUE;
+//void GetTagTable(PGresult* res, VALUE& All, std::string Patch, int l, std::ofstream& ofs);
+//bool GetTagTable(std::string Patch, Value& val, PGresult* res, int l, std::ofstream& ofs)
+
+void SetValue(Value& val);
+std::string GetType(VariantType type, std::string value);

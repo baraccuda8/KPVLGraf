@@ -2,7 +2,10 @@
 
 #include "resource.h"
 
+#define MAX_LOADSTRING 100
+
 #define ALL_LOG "All Log"
+#define ALL_LOG_REM (std::string(ALL_LOG) + ".log").c_str()
 
 extern HWND GlobalhWnd;
 extern HINSTANCE hInstance;
