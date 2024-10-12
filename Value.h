@@ -35,14 +35,14 @@ class Value{
 public:
     boost::any Val;
 	int ID = 0;
-	bool Arhive = true;
+    std::string Content = "";
+    bool Arhive = true;
     std::string Patch = "";
 	std::string Comment = "";
-	float coeff = 1.0;
-	float hist = 1.0;
-	std::string format = "";
+	float Coeff = 1.0;
+	float Hist = 1.0;
+	std::string Format = "";
     VariantType Type = VariantType::NUL;
-    std::string content = "";
 
 	VariantType GetType() {
         return Type;
@@ -51,7 +51,7 @@ public:
     {
         try
         {
-                if(format.length())
+                if(Format.length())
                 {
                     char ss[256] = "";
 
@@ -59,128 +59,128 @@ public:
                     {
                         if(Type == VariantType::BOOLEAN)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<bool>(Val));
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<bool>(Val));
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "BOOLEAN");
+                    CATCH(AllLogger, "BOOLEAN");
                     try
                     {
                         if(Type == VariantType::SBYTE)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<int8_t>(Val) * (int8_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<int8_t>(Val) * (int8_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "SBYTE");
+                    CATCH(AllLogger, "SBYTE");
                     try
                     {
                         if(Type == VariantType::BYTE)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<uint8_t>(Val) * (uint8_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<uint8_t>(Val) * (uint8_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "BYTE");
+                    CATCH(AllLogger, "BYTE");
                     try
                     {
                         //boost::typeindex::type_index t = Val.type();
                         //const char*  n = t.name();
                         if(Type == VariantType::INT16)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<int16_t>(Val) * (int32_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<int16_t>(Val) * (int32_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, Comment);
+                    CATCH(AllLogger, Comment);
                     try
                     {
                         if(Type == VariantType::UINT16)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<uint16_t>(Val) * (uint16_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<uint16_t>(Val) * (uint16_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "UINT16");
+                    CATCH(AllLogger, "UINT16");
                     try
                     {
                         if(Type == VariantType::INT32)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<int32_t>(Val) * (int32_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<int32_t>(Val) * (int32_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "INT32");
+                    CATCH(AllLogger, "INT32");
                     try
                     {
                         if(Type == VariantType::UINT32)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<uint32_t>(Val) * (uint32_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<uint32_t>(Val) * (uint32_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "UINT32");
+                    CATCH(AllLogger, "UINT32");
                     try
                     {
                         if(Type == VariantType::INT64)
                         {     
-                            sprintf_s(ss, 255, format.c_str(), any_cast<int64_t>(Val) * (int64_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<int64_t>(Val) * (int64_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "INT64");
+                    CATCH(AllLogger, "INT64");
                     try
                     {
                         if(Type == VariantType::UINT64)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<uint64_t>(Val) * (uint64_t)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<uint64_t>(Val) * (uint64_t)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "UINT64");
+                    CATCH(AllLogger, "UINT64");
                     try
                     {
                         if(Type == VariantType::FLOAT)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<float>(Val) * (float)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<float>(Val) * (float)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "FLOAT");
+                    CATCH(AllLogger, "FLOAT");
                     try
                     {
                         if(Type == VariantType::DOUBLE)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<double>(Val) * (double)coeff);
+                            sprintf_s(ss, 255, Format.c_str(), any_cast<double>(Val) * (double)Coeff);
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "DOUBLE");
+                    CATCH(AllLogger, "DOUBLE");
                     try
                     {
                         if(Type == VariantType::STRING)
                         {
-                            sprintf_s(ss, 255, format.c_str(), any_cast<std::string>(Val));
+                            sprintf_s(ss, 255, Format.c_str(), utf8_to_cp1251(any_cast<std::string>(Val)));
                             return ss;
                         }
                     }
-                    CATCH(ALL_LOG, "STRING");
+                    CATCH(AllLogger, "STRING");
                     return ss;
                 }
                 else
                 {
                     try
                     {
-                        if(Type == VariantType::STRING)  return content;
+                        if(Type == VariantType::STRING)  return utf8_to_cp1251(Content);
                     }
-                    CATCH(ALL_LOG, "STRING");
+                    CATCH(AllLogger, "STRING");
                     try
                     {
-                        return content;
-                    }CATCH(ALL_LOG, "ANY");
+                        return Content;
+                    }CATCH(AllLogger, "ANY");
                 }
         }
-        CATCH(ALL_LOG, "");
+        CATCH(AllLogger, "");
         return "";
     }
 
@@ -188,8 +188,8 @@ public:
     Value(std::string p) : Patch(p) { }
 
     bool SaveTagTable(std::ofstream& ofs);
-    bool GetTagTable(PGresult* res, std::string& patch, int l);
-
+    bool GetTagTable(PGresult* res, int l, std::string& patch);
+    bool GetCurentValue(PGresult* res, int l, int id);
 
 
 };

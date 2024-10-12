@@ -4,8 +4,10 @@
 
 #define MAX_LOADSTRING 100
 
-#define ALL_LOG "All Log"
-#define ALL_LOG_REM (std::string(ALL_LOG) + ".log").c_str()
+#define AllLogger "All Log"
+#define AllLogger_Rem (std::string(AllLogger) + ".log").c_str()
+
+extern bool isRun;
 
 extern HWND GlobalhWnd;
 extern HINSTANCE hInstance;
@@ -14,13 +16,15 @@ extern std::string szWindowClass;
 
 enum class LOGLEVEL{
     LEVEL_INFO = 0,
-    LEVEL_ERROR = 1,
+    LEVEL_WARN = 1,
+    LEVEL_ERROR = 2,
 };
 
 #define FUNCTION_LINE_NAME (std::string( __FUNCTION__ ) + std::string (":") + std::to_string(__LINE__))
 
-#define LOG_ERROR(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_ERROR, _s1, _s2, _s3);
-#define LOG_INFO(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_INFO, _s1, _s2, _s3);
+#define LOG_INFO(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_INFO, _s1, _s2, _s3)
+#define LOG_WARN(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_WARN, _s1, _s2, _s3)
+#define LOG_ERROR(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_ERROR, _s1, _s2, _s3)
 
 #define LOG_ERR_SQL(_l, _r, _c){\
 LOG_ERROR(_l, FUNCTION_LINE_NAME, _c);\
@@ -28,11 +32,23 @@ LOG_ERROR(_l, FUNCTION_LINE_NAME, utf8_to_cp1251(PQresultErrorMessage(_r)));\
 }\
 
 
+
 #define CATCH(_l, _s) \
     catch(std::filesystem::filesystem_error& exc) { DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s),  exc.what());} \
     catch(std::runtime_error& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
     catch(std::exception& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
     catch(...){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), "Unknown error");}
+
+#define WaitCloseTheread(_t) if(_t){\
+    DWORD dwEvent = WaitForSingleObject(_t, 2000);\
+    if(dwEvent == WAIT_OBJECT_0)        LOG_INFO(AllLogger, FUNCTION_LINE_NAME, std::string(#_t) + " = WAIT_OBJECT_0");\
+    else if(dwEvent == WAIT_ABANDONED)  LOG_WARN(AllLogger, FUNCTION_LINE_NAME, std::string(#_t) + " = WAIT_ABANDONED");\
+    else if(dwEvent == WAIT_TIMEOUT)    LOG_WARN(AllLogger, FUNCTION_LINE_NAME, std::string(#_t) + " = WAIT_TIMEOUT");\
+    else if(dwEvent == WAIT_FAILED)     LOG_WARN(AllLogger, FUNCTION_LINE_NAME, std::string(#_t) + " = WAIT_FAILED");\
+    else                                LOG_WARN(AllLogger, FUNCTION_LINE_NAME, std::string(#_t) + " = " + std::to_string(dwEvent));\
+}
+
+
 
 LRESULT Quit();
 

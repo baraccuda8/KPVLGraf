@@ -24,6 +24,7 @@
 
 
 // Глобальные переменные:
+bool isRun = false;;
 HWND GlobalhWnd = NULL;
 HINSTANCE hInstance = NULL;                                // текущий экземпляр
 std::string szTitle = "KPVLGraf";                  // Текст строки заголовка
@@ -80,8 +81,12 @@ void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::s
     char sFormat[1024];
     if(l == LOGLEVEL::LEVEL_INFO)
         sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [INFO] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
-    else //if(l == LOGLEVEL::LEVEL_ERROR)
+    else if(l == LOGLEVEL::LEVEL_WARN)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [WARN] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else if(l == LOGLEVEL::LEVEL_ERROR)
         sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [ERROR] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [CRITICAL] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
 
     std::string file = f + ".log";
     std::ofstream F(file.c_str(), std::ios::binary | std::ios::out | std::ios::app);
@@ -105,7 +110,7 @@ int WinErrorExit(HWND hWnd, const char* lpszFunction)
 
     //if(AllLogger) AllLogger->error(std::string((char*)lpDisplayBuf));
     //MessageBox(hWnd, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK | MB_SYSTEMMODAL | MB_ICONERROR);
-    DenugInfo(LOGLEVEL::LEVEL_ERROR, ALL_LOG, FUNCTION_LINE_NAME, (char*)lpDisplayBuf);
+    DenugInfo(LOGLEVEL::LEVEL_ERROR, AllLogger, FUNCTION_LINE_NAME, (char*)lpDisplayBuf);
     LocalFree(lpMsgBuf);
     LocalFree(lpDisplayBuf);
     PostQuitMessage(0);
@@ -114,6 +119,7 @@ int WinErrorExit(HWND hWnd, const char* lpszFunction)
 
 LRESULT Quit()
 {
+    isRun = false;
     PostQuitMessage(0);
     return 0;
 }
@@ -197,7 +203,6 @@ void CurrentDir()
     strPatchFileName = std::string(ss);
 }
 
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
     MSG msg;
@@ -205,7 +210,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
     try
     {
         hInstance = hInst;
-        remove(ALL_LOG_REM);
+        remove(AllLogger_Rem);
 
 
         if(!GdiPlusInit.Good())
@@ -224,8 +229,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
             throw std::runtime_error("!InitSQL");
         }
 
+        isRun = true;
         // Цикл основного сообщения:
-        while(GetMessage(&msg, nullptr, 0, 0))
+        while(isRun && GetMessage(&msg, nullptr, 0, 0))
         {
             if(!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
             {
@@ -233,7 +239,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _I
                 DispatchMessage(&msg);
             }
         }
-    }CATCH(ALL_LOG, "Error:");
+        isRun = false;
+        StopSql();
+    }CATCH(AllLogger, "Error:");
 
     return (int)0;
 }

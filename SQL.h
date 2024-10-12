@@ -8,7 +8,7 @@
 
 #pragma region define
 
-#define    SQL_LOG "SQL Log"
+#define    SQLLogger "SQL Log"
 #define    SheetPos0 0
 #define    SheetPos1 1
 #define    SheetPos2 2
@@ -64,6 +64,19 @@ namespace CollTag{
     extern int Idsec;
 }
 
+namespace evCassete
+{
+    enum EV{
+        Nul = 0,        //"Неизвестно"
+        Fill = 1,       //"Набирается"
+        Wait = 2,       //"Ожидает"
+        Rel = 3,        //"Отпуск"
+        Error = 4,      //"Авария"
+        End = 5,        //"Конец"
+        History = 6,    //"Конец"
+        Delete = 7,     //"Удалена"
+    };
+}
 
 
 inline std::string PGgetvalue(PGresult* res, int l, int i)
@@ -118,7 +131,7 @@ public:
             PQclear(res);
 
             connections = true;
-        }CATCH(SQL_LOG, "")
+        }CATCH(SQLLogger, "")
 
         return connections;
     }
@@ -145,22 +158,17 @@ public:
     {
         if(!connections) return "";
         return ::PGgetvalue(res, l, i);
-
-        //std::string ss = PQgetvalue(res, l, i);
-        //if(!ss.empty())
-            //return utf8_to_cp1251(ss);
-        //else return "";
     }
 
 };
 
+extern std::map<int, Value*>AllTag;
 
 //extern std::string PLC210APPL;
 class T_Tag{
 public:
-    virtual bool GetTagTable(PGresult* res, std::string& patch, int l) = 0;
+    virtual bool GetTagTable(PGresult* res, int l, std::string& patch) = 0;
 };
-
 
 class T_AI_Hmi_210 : public T_Tag{
     std::string pt = "";
@@ -185,15 +193,15 @@ public:
     //REAL Пирометр
     Value Za_TE4 = Value(pt + "Za_TE4.AI_eu");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(LaminPressBot.GetTagTable(res, patch, l))return true;
-        if(LaminPressTop.GetTagTable(res, patch, l))return true;
-        if(LAM_TE1.GetTagTable(res, patch, l))return true;
-        if(Za_PT3.GetTagTable(res, patch, l))return true;
-        if(Za_TE3.GetTagTable(res, patch, l))return true;
-        if(Za_TE4.GetTagTable(res, patch, l))return true;
+        if(LaminPressBot.GetTagTable(res, l, patch))return true;
+        if(LaminPressTop.GetTagTable(res, l, patch))return true;
+        if(LAM_TE1.GetTagTable(res, l, patch))return true;
+        if(Za_PT3.GetTagTable(res, l, patch))return true;
+        if(Za_TE3.GetTagTable(res, l, patch))return true;
+        if(Za_TE4.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -206,10 +214,10 @@ public:
     //REAL Уставки температуры в печи
     Value TempSet1 = Value(pt + "TempSet1");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(TempSet1.GetTagTable(res, patch, l))return true;
+        if(TempSet1.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -237,15 +245,15 @@ public:
     //INT Номер шага последовательности обработки в ламинарке
     Value Seq_3_StateNo = Value(pt + "Seq_3_StateNo");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(CoolTimeAct.GetTagTable(res, patch, l))return true;
-        if(HeatTime_Z1.GetTagTable(res, patch, l))return true;
-        if(HeatTime_Z2.GetTagTable(res, patch, l))return true;
-        if(Seq_1_StateNo.GetTagTable(res, patch, l))return true;
-        if(Seq_2_StateNo.GetTagTable(res, patch, l))return true;
-        if(Seq_3_StateNo.GetTagTable(res, patch, l))return true;
+        if(CoolTimeAct.GetTagTable(res, l, patch))return true;
+        if(HeatTime_Z1.GetTagTable(res, l, patch))return true;
+        if(HeatTime_Z2.GetTagTable(res, l, patch))return true;
+        if(Seq_1_StateNo.GetTagTable(res, l, patch))return true;
+        if(Seq_2_StateNo.GetTagTable(res, l, patch))return true;
+        if(Seq_3_StateNo.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -264,12 +272,12 @@ public:
     //REAL Скорость выгрузки
     Value UnloadSpeed = Value(pt + "UnloadSpeed");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(PresToStartComp.GetTagTable(res, patch, l))return true;
-        if(TimeForPlateHeat.GetTagTable(res, patch, l))return true;
-        if(UnloadSpeed.GetTagTable(res, patch, l))return true;
+        if(PresToStartComp.GetTagTable(res, l, patch))return true;
+        if(TimeForPlateHeat.GetTagTable(res, l, patch))return true;
+        if(UnloadSpeed.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -303,17 +311,17 @@ public:
     //REAL Температура в зоне 2.4
     Value Htr2_4 = Value (pt + "Htr2_4.ToHmi.TAct");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(Htr1_1.GetTagTable(res, patch, l))return true;
-        if(Htr1_2.GetTagTable(res, patch, l))return true;
-        if(Htr1_3.GetTagTable(res, patch, l))return true;
-        if(Htr1_4.GetTagTable(res, patch, l))return true;
-        if(Htr2_1.GetTagTable(res, patch, l))return true;
-        if(Htr2_2.GetTagTable(res, patch, l))return true;
-        if(Htr2_3.GetTagTable(res, patch, l))return true;
-        if(Htr2_4.GetTagTable(res, patch, l))return true;
+        if(Htr1_1.GetTagTable(res, l, patch))return true;
+        if(Htr1_2.GetTagTable(res, l, patch))return true;
+        if(Htr1_3.GetTagTable(res, l, patch))return true;
+        if(Htr1_4.GetTagTable(res, l, patch))return true;
+        if(Htr2_1.GetTagTable(res, l, patch))return true;
+        if(Htr2_2.GetTagTable(res, l, patch))return true;
+        if(Htr2_3.GetTagTable(res, l, patch))return true;
+        if(Htr2_4.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -326,39 +334,39 @@ public:
     //Char Код марки
     Value AlloyCodeText = Value(pt + "AlloyCodeText.sText");
 
+    //Char код толщины. Зависит от марки стали.
+    Value ThiknessText = Value(pt + "ThiknessText.sText");
+
     //DINT номер плавки
     Value Melt = Value(pt + "Melt");
-
-    //DINT Пачка
-    Value Pack = Value(pt + "Pack");
-
-    //DINT номер партии
-    Value PartNo = Value(pt + "PartNo");
-
-    //DINT номер листа
-    Value Sheet = Value(pt + "Sheet");
 
     //DINT Номер сляба
     Value Slab = Value(pt + "Slab");
 
+    //DINT номер партии
+    Value PartNo = Value(pt + "PartNo");
+
+    //DINT Пачка
+    Value Pack = Value(pt + "Pack");
+
+    //DINT номер листа
+    Value Sheet = Value(pt + "Sheet");
+
     //DINT подномер листа
     Value SubSheet = Value(pt + "SubSheet");
 
-    //Char код толщины. Зависит от марки стали.
-    Value ThiknessText = Value(pt + "ThiknessText.sText");
-
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(AlloyCodeText.GetTagTable(res, patch, l))return true;
-        if(Melt.GetTagTable(res, patch, l))return true;
-        if(Pack.GetTagTable(res, patch, l))return true;
-        if(PartNo.GetTagTable(res, patch, l))return true;
-        if(Sheet.GetTagTable(res, patch, l))return true;
-        if(Slab.GetTagTable(res, patch, l))return true;
-        if(SubSheet.GetTagTable(res, patch, l))return true;
-        if(ThiknessText.GetTagTable(res, patch, l))return true;
+        if(AlloyCodeText.GetTagTable(res, l, patch))return true;
+        if(Melt.GetTagTable(res, l, patch))return true;
+        if(Pack.GetTagTable(res, l, patch))return true;
+        if(PartNo.GetTagTable(res, l, patch))return true;
+        if(Sheet.GetTagTable(res, l, patch))return true;
+        if(Slab.GetTagTable(res, l, patch))return true;
+        if(SubSheet.GetTagTable(res, l, patch))return true;
+        if(ThiknessText.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -368,35 +376,35 @@ class T_CassetteData: public T_Tag{
 public:
     T_CassetteData(std::string p): pt(p) { }
 
-    //DINT Номер кассеты за день
-    Value CassetteNo = Value(pt + "CassetteNo");
-
-    //DINT День ID листа
-    Value Day = Value(pt + "Day");
+    //DINT Год ID листа
+    Value Year = Value(pt + "Year");
 
     //DINT Месяц ID листа
     Value Month = Value(pt + "Month");
 
-    //INT Номер листа в касете
-    Value SheetInCassette = Value(pt + "SheetInCassette");
-
-    //DINT Год ID листа
-    Value Year = Value(pt + "Year");
+    //DINT День ID листа
+    Value Day = Value(pt + "Day");
 
     //UINT Час ID листа
     Value Hour = Value(pt + "Hour");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    //DINT Номер кассеты за день
+    Value CassetteNo = Value(pt + "CassetteNo");
+
+    //INT Номер листа в касете
+    Value SheetInCassette = Value(pt + "SheetInCassette");
+
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(Year.GetTagTable(res, patch, l))return true;
-        if(Month.GetTagTable(res, patch, l))return true;
-        if(Day.GetTagTable(res, patch, l))return true;
-        if(Hour.GetTagTable(res, patch, l))return true;
+        if(Year.GetTagTable(res, l, patch))return true;
+        if(Month.GetTagTable(res, l, patch))return true;
+        if(Day.GetTagTable(res, l, patch))return true;
+        if(Hour.GetTagTable(res, l, patch))return true;
 
-        if(CassetteNo.GetTagTable(res, patch, l))return true;
-        if(SheetInCassette.GetTagTable(res, patch, l))return true;
+        if(CassetteNo.GetTagTable(res, l, patch))return true;
+        if(SheetInCassette.GetTagTable(res, l, patch))return true;
 
         return false;
     }
@@ -430,18 +438,18 @@ public:
 
     //REAL высота листа в точке8
     Value h8 = Value (pt + "h8");
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(h1.GetTagTable(res, patch, l))return true;
-        if(h2.GetTagTable(res, patch, l))return true;
-        if(h3.GetTagTable(res, patch, l))return true;
-        if(h4.GetTagTable(res, patch, l))return true;
-        if(h5.GetTagTable(res, patch, l))return true;
-        if(h6.GetTagTable(res, patch, l))return true;
-        if(h7.GetTagTable(res, patch, l))return true;
-        if(h8.GetTagTable(res, patch, l))return true;
+        if(h1.GetTagTable(res, l, patch))return true;
+        if(h2.GetTagTable(res, l, patch))return true;
+        if(h3.GetTagTable(res, l, patch))return true;
+        if(h4.GetTagTable(res, l, patch))return true;
+        if(h5.GetTagTable(res, l, patch))return true;
+        if(h6.GetTagTable(res, l, patch))return true;
+        if(h7.GetTagTable(res, l, patch))return true;
+        if(h8.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -451,17 +459,17 @@ class T_Section: public T_Tag{
 public:
     T_Section(std::string p): pt(p) { }
 
-    //Низ
-    Value Bottom = Value(pt + "Bottom");
-
     //Верх
     Value Top = Value(pt + "Top");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    //Низ
+    Value Bottom = Value(pt + "Bottom");
+
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
-        if(Bottom.GetTagTable(res, patch, l))return true;
-        if(Top.GetTagTable(res, patch, l))return true;
+        if(Bottom.GetTagTable(res, l, patch))return true;
+        if(Top.GetTagTable(res, l, patch))return true;
         return false;
     }
 };
@@ -471,20 +479,8 @@ class T_HMISheetData: public T_Tag{
 public:
     T_HMISheetData(std::string p): pt(p) { }
 
-    //DINT Счетчик циклов контроллера
-    //Value WDG = Value(pt + "");
-
-    //BOOL Бит жизни для базы
-    //Value WDG_toBase = Value(pt + "");
-
-    //BOOL Обратный бит жизни для контроллера
-    //Value WDG_fromBase = Value(pt + "");
-
     //BOOL Новые лист в касету
     Value NewData = Value(pt + "NewData");
-
-    //BOOL Ответ Новые лист в касету
-    //Value SaveDone = Value(pt + "SaveDone");
 
     //BOOL кассета наполяентся
     Value CasseteIsFill = Value(pt + "CasseteIsFill");
@@ -519,25 +515,25 @@ public:
     //Наполняемая кассета на кантовке
     T_CassetteData Cassette = T_CassetteData(pt + "Cassette.");
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(NewData.GetTagTable(res, patch, l))return true;
-        if(CasseteIsFill.GetTagTable(res, patch, l))return true;
-        if(CassetteIsComplete.GetTagTable(res, patch, l))return true;
-        if(StartNewCassette.GetTagTable(res, patch, l))return true;
-        if(Valve_1x.GetTagTable(res, patch, l))return true;
-        if(Valve_2x.GetTagTable(res, patch, l))return true;
+        if(NewData.GetTagTable(res, l, patch))return true;
+        if(CasseteIsFill.GetTagTable(res, l, patch))return true;
+        if(CassetteIsComplete.GetTagTable(res, l, patch))return true;
+        if(StartNewCassette.GetTagTable(res, l, patch))return true;
+        if(Valve_1x.GetTagTable(res, l, patch))return true;
+        if(Valve_2x.GetTagTable(res, l, patch))return true;
 
-        if(SpeedSection.GetTagTable(res, patch, l))return true;
-        if(LaminarSection1.GetTagTable(res, patch, l))return true;
-        if(LaminarSection2.GetTagTable(res, patch, l))return true;
+        if(SpeedSection.GetTagTable(res, l, patch))return true;
+        if(LaminarSection1.GetTagTable(res, l, patch))return true;
+        if(LaminarSection2.GetTagTable(res, l, patch))return true;
 
-        if(Top_Side.GetTagTable(res, patch, l))return true;
-        if(Bot_Side.GetTagTable(res, patch, l))return true;
+        if(Top_Side.GetTagTable(res, l, patch))return true;
+        if(Bot_Side.GetTagTable(res, l, patch))return true;
 
-        if(Cassette.GetTagTable(res, patch, l))return true;
+        if(Cassette.GetTagTable(res, l, patch))return true;
 
         return false;
     }
@@ -557,21 +553,22 @@ public:
     //DINT День ID листа
     Value Day = Value(pt + "Day");
 
+    //UINT Час ID листа
+    Value Hour = Value(pt + "Hour");
+
     //DINT Номер кассеты за день
     Value CassetteNo = Value(pt + "CaasetteNo");
 
-    //UINT Час ID листа
-    Value Hour = Value(pt + "Hour");
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(Year.GetTagTable(res, patch, l))return true;
-        if(Month.GetTagTable(res, patch, l))return true;
-        if(Day.GetTagTable(res, patch, l))return true;
-        if(Hour.GetTagTable(res, patch, l))return true;
+        if(Year.GetTagTable(res, l, patch))return true;
+        if(Month.GetTagTable(res, l, patch))return true;
+        if(Day.GetTagTable(res, l, patch))return true;
+        if(Hour.GetTagTable(res, l, patch))return true;
 
-        if(CassetteNo.GetTagTable(res, patch, l))return true;
+        if(CassetteNo.GetTagTable(res, l, patch))return true;
 
         return false;
     }
@@ -582,88 +579,88 @@ class T_Furn: public T_Tag{
 public:
     T_Furn(std::string p): pt(p) { }
     
-    //REAL Время до окончания процесса, мин
-    Value TimeToProcEnd = Value(pt + "TimeToProcEnd");
-
-    //REAL Полное время процесса (уставка), мин
-    Value TimeProcSet = Value(pt + "TimeProcSet");
-
-    //REAL Заданное значение температуры
-    Value TempRef = Value(pt + "TempRef");
-
-    //REAL Время процесса, час (0..XX)
-    Value ProcTimeMin = Value(pt + "ProcTimeMin");
-
     //BOOL Работа
     Value ProcRun = Value(pt + "ProcRun");
-
-    //BOOL Авария процесса
-    Value ProcFault = Value(pt + "ProcFault");
 
     //BOOL Окончание процесса
     Value ProcEnd = Value(pt + "ProcEnd");
 
-    //REAL Задание Время разгона
-    Value PointTime_1 = Value(pt + "PointTime_1");
+    //BOOL Авария процесса
+    Value ProcFault = Value(pt + "ProcFault");
+
+    //BOOL Возврат касеты в список
+    Value ReturnCassetteCmd = Value(pt + "ReturnCassetteCmd");
 
     //REAL Уставка температуры
     Value PointRef_1 = Value(pt + "PointRef_1");
 
-    //REAL Задание Время выдержки
-    Value PointDTime_2 = Value(pt + "PointDTime_2");
+    //REAL Заданное значение температуры
+    Value TempRef = Value(pt + "TempRef");
 
     //REAL Фактическое значение температуры
     Value TempAct = Value(pt + "TempAct");
 
-    //REAL Термопара 2
-    Value T2 = Value(pt + "T2");
-
     //REAL Термопара 1
     Value T1 = Value(pt + "T1");
 
-    //REAL Факт время нагрева
+    //REAL Термопара 2
+    Value T2 = Value(pt + "T2");
+
+    //REAL Задание Время разгона/нагрева
+    Value PointTime_1 = Value(pt + "PointTime_1");
+
+    //REAL Факт время разгона/нагрева
     Value ActTimeHeatAcc = Value(pt + "ActTimeHeatAcc");
+
+    //REAL Задание Время выдержки
+    Value PointDTime_2 = Value(pt + "PointDTime_2");
 
     //REAL Факт время выдержки
     Value ActTimeHeatWait = Value(pt + "ActTimeHeatWait");
 
+    //REAL Полное время процесса (уставка), мин
+    Value TimeProcSet = Value(pt + "TimeProcSet");
+
+    //REAL Время процесса, час (0..XX)
+    Value ProcTimeMin = Value(pt + "ProcTimeMin");
+
     //REAL Факт общее время 
     Value ActTimeTotal = Value(pt + "ActTimeTotal");
 
-    //Возврат касеты в список
-    Value ReturnCassetteCmd = Value(pt + "ReturnCassetteCmd");
+    //REAL Время до окончания процесса, мин
+    Value TimeToProcEnd = Value(pt + "TimeToProcEnd");
 
     //Кассета на отпуске
     T_FCassette Cassette = T_FCassette(pt + "Cassette.");;
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(PointTime_1.GetTagTable(res, patch, l))return true;
-        if(PointRef_1.GetTagTable(res, patch, l))return true;
-        if(PointDTime_2.GetTagTable(res, patch, l))return true;
-        if(ProcRun.GetTagTable(res, patch, l))return true;
-        if(ProcEnd.GetTagTable(res, patch, l))return true;
-        if(ProcFault.GetTagTable(res, patch, l))return true;
+        if(PointTime_1.GetTagTable(res, l, patch))return true;
+        if(PointRef_1.GetTagTable(res, l, patch))return true;
+        if(PointDTime_2.GetTagTable(res, l, patch))return true;
+        if(ProcRun.GetTagTable(res, l, patch))return true;
+        if(ProcEnd.GetTagTable(res, l, patch))return true;
+        if(ProcFault.GetTagTable(res, l, patch))return true;
 
-        if(TimeProcSet.GetTagTable(res, patch, l))return true;
-        if(ProcTimeMin.GetTagTable(res, patch, l))return true;
-        if(TimeToProcEnd.GetTagTable(res, patch, l))return true;
+        if(TimeProcSet.GetTagTable(res, l, patch))return true;
+        if(ProcTimeMin.GetTagTable(res, l, patch))return true;
+        if(TimeToProcEnd.GetTagTable(res, l, patch))return true;
 
-        if(TempRef.GetTagTable(res, patch, l))return true;
-        if(TempAct.GetTagTable(res, patch, l))return true;
+        if(TempRef.GetTagTable(res, l, patch))return true;
+        if(TempAct.GetTagTable(res, l, patch))return true;
 
-        if(T1.GetTagTable(res, patch, l))return true;
-        if(T2.GetTagTable(res, patch, l))return true;
+        if(T1.GetTagTable(res, l, patch))return true;
+        if(T2.GetTagTable(res, l, patch))return true;
 
-        if(ActTimeHeatAcc.GetTagTable(res, patch, l))return true;
-        if(ActTimeHeatWait.GetTagTable(res, patch, l))return true;
-        if(ActTimeTotal.GetTagTable(res, patch, l))return true;
+        if(ActTimeHeatAcc.GetTagTable(res, l, patch))return true;
+        if(ActTimeHeatWait.GetTagTable(res, l, patch))return true;
+        if(ActTimeTotal.GetTagTable(res, l, patch))return true;
 
-        if(ReturnCassetteCmd.GetTagTable(res, patch, l))return true;
+        if(ReturnCassetteCmd.GetTagTable(res, l, patch))return true;
 
-        if(Cassette.GetTagTable(res, patch, l))return true;
+        if(Cassette.GetTagTable(res, l, patch))return true;
 
         return false;
     }
@@ -691,20 +688,20 @@ public:
         T_FCassette(pt + "cassette[7]."),
     };
 
-    bool GetTagTable(PGresult* res, std::string& patch, int l)
+    bool GetTagTable(PGresult* res, int l, std::string& patch)
     {
         if(patch.find(pt) == std::string::npos)return false;
 
-        if(selected_cassetFurn1.GetTagTable(res, patch, l))return true;
-        if(selected_cassetFurn2.GetTagTable(res, patch, l))return true;
+        if(selected_cassetFurn1.GetTagTable(res, l, patch))return true;
+        if(selected_cassetFurn2.GetTagTable(res, l, patch))return true;
 
-        if(Cassette[Cassette1].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette2].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette3].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette4].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette5].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette6].GetTagTable(res, patch, l))return true;
-        if(Cassette[Cassette7].GetTagTable(res, patch, l))return true;
+        if(Cassette[Cassette1].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette2].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette3].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette4].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette5].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette6].GetTagTable(res, l, patch))return true;
+        if(Cassette[Cassette7].GetTagTable(res, l, patch))return true;
 
         return false;
     }
@@ -712,6 +709,31 @@ public:
 
 void InitCurentTag();
 bool InitSQL();
+void StopSql();
+
+
+#pragma region Закалочная печи 
+extern std::string PLC210APPL;
+
+extern T_AI_Hmi_210 AI_Hmi_210;
+extern T_Hmi210_1 Hmi210_1;
+extern T_GenSeqFromHmi GenSeqFromHmi;
+extern T_GenSeqToHmi GenSeqToHmi;
+extern T_Par_Gen Par_Gen;
+extern T_HMISheetData HMISheetData;
+
+extern T_PlateData PlateData[SheetMaxPos];
+#pragma endregion
+
+#pragma region Печи отпуска 
+extern std::string SPK107APPL;
+
+extern T_Furn Furn_1;
+extern T_Furn Furn_2;
+
+extern T_CassetteArray CassetteArray;
+#pragma endregion
+
 
 //extern PGConnection conn_kpvl;
 //extern PGConnection conn_kpvl2;
