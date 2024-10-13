@@ -25,6 +25,7 @@ namespace CollTag{
     int Type = 0;
     int Arhive = 0;
     int Comment = 0;
+    int Content_at = 0;
     int Content = 0;
     int Coeff = 0;
     int Hist = 0;
@@ -32,8 +33,17 @@ namespace CollTag{
     int Idsec = 0;
 }
 
+namespace CollTagValue{
+    int Id = 0;
+    int Content_at = 0;
+    int Content = 0;
+}
 
 HANDLE hSqlTag = NULL;
+
+std::string GlobalSQL_Date = "";
+time_t GlobalSQL_tm = 0;
+
 std::map<int, Value*>AllTag;
 
 std::map<std::string, std::string> NamePos;
@@ -134,11 +144,12 @@ std::string utf8_to_cp1251(std::string str)
 }
 
 
+
 void InitCurentTag()
 {
     try
     {
-        std::string comand = "SELECT id, name, type, arhive, comment, content, coeff, hist, format, idsec FROM tag ORDER BY id;";
+        std::string comand = "SELECT id, name, type, arhive, comment, to_char(content_at, 'DD-MM-YYYY HH24:MI:SS') AS content_at, content, coeff, hist, format, idsec FROM tag where arhive = 't' ORDER BY id;";
         PGresult* res = conn_spis.PGexec(comand);
 
         if(PQresultStatus(res) == PGRES_TUPLES_OK)
@@ -152,6 +163,8 @@ void InitCurentTag()
                 else if(l == "type") CollTag::Type = j;
                 else if(l == "arhive") CollTag::Arhive = j;
                 else if(l == "comment") CollTag::Comment = j;
+
+                else if(l == "content_at") CollTag::Content_at = j;
                 else if(l == "content") CollTag::Content = j;
                 else if(l == "coeff") CollTag::Coeff = j;
                 else if(l == "hist") CollTag::Hist = j;
@@ -216,6 +229,7 @@ void InitCurentTag()
     }CATCH(SQLLogger, "InitCurentTag");
 }
 
+
 DWORD WINAPI CurentValue(LPVOID)
 {
     try
@@ -224,15 +238,32 @@ DWORD WINAPI CurentValue(LPVOID)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-            std::string comand = "SELECT id, content FROM tag ORDER BY id;";
-            PGresult* res = conn_spis.PGexec(comand);
-
+            std::stringstream com;
+            com << "SELECT id, to_char(content_at, 'DD-MM-YYYY HH24:MI:SS') AS content_at, content FROM tag WHERE arhive = 't' ";
+            if(GlobalSQL_Date.length())
+                com << "AND content_at > '" << GlobalSQL_Date << "' ";
+            com << "ORDER BY id;";
+            PGresult* res = conn_spis.PGexec(com);
+            int count = 0;
             if(PQresultStatus(res) == PGRES_TUPLES_OK)
             {
+                int nFields = PQnfields(res);
+                if(!CollTagValue::Content)
+                {
+                    for(int j = 0; j < nFields; j++)
+                    {
+                        std::string l =  utf8_to_cp1251(PQfname(res, j));
+                        if(l == "id") CollTagValue::Id = j;
+                        else if(l == "content_at") CollTagValue::Content_at = j;
+                        else if(l == "content") CollTagValue::Content = j;
+                    }
+                }
+
                 int line = PQntuples(res);
+                count = line;
                 for(int l = 0; l < line; l++)
                 {
-                    int id = Stoi(PGgetvalue(res, l, 0));
+                    int id = Stoi(PGgetvalue(res, l, CollTagValue::Id));
 
                     for(auto& a : AllTag)
                         if(a.second->GetCurentValue(res, l, id)) continue;
@@ -260,10 +291,14 @@ DWORD WINAPI CurentValue(LPVOID)
                 }
             }
             else if(PQresultStatus(res) == PGRES_FATAL_ERROR)
-                LOG_ERR_SQL(SQLLogger, res, comand);
+                LOG_ERR_SQL(SQLLogger, res, com);
             PQclear(res);
-            std::string s = "Furn_1: " + Furn_1.ActTimeTotal.Content + "  Furn_2: " + Furn_2.ActTimeTotal.Content;
-            SetWindowText(GlobalhWnd, s.c_str());
+            std::stringstream s;
+            s << "  Furn_1: " << Furn_1.ActTimeTotal.Content;
+            s << "  Furn_2: " << Furn_2.ActTimeTotal.Content;
+            s << "  Date: " << GlobalSQL_Date;
+            s << "  count = " << count;
+            SetWindowText(GlobalhWnd, s.str().c_str());
             
         }
         int tt = 0;

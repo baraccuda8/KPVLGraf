@@ -36,6 +36,7 @@ public:
     boost::any Val;
 	int ID = 0;
     std::string Content = "";
+    std::string Content_at = "";
     bool Arhive = true;
     std::string Patch = "";
 	std::string Comment = "";

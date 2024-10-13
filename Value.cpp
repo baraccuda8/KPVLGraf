@@ -1,5 +1,6 @@
 #include "framework.h"
 #include "KPVLGraf.h"
+#include "DataTime.h"
 #include "SQL.h"
 #include "Value.h"
 
@@ -72,17 +73,26 @@ bool Value::GetTagTable(PGresult* res, int l, std::string& patch)
     if(Patch != patch) return false;
     try
     {
+        
         ID = static_cast<int>(Stoi(PGgetvalue(res, l, CollTag::Id).c_str()));
         Arhive = static_cast<bool>(PGgetvalue(res, l, CollTag::Arhive) == "t");
         Comment = static_cast<std::string>(PGgetvalue(res, l, CollTag::Comment));
         Coeff = static_cast<float>(Stof(PGgetvalue(res, l, CollTag::Coeff).c_str()));
         Hist = static_cast<float>(Stod(PGgetvalue(res, l, CollTag::Hist).c_str()));
         Format = static_cast<std::string>(PGgetvalue(res, l, CollTag::Format));
-
         Type =  static_cast<VariantType>(Stoi(PGgetvalue(res, l, CollTag::Type)));
+        Content_at = static_cast<std::string>(PGgetvalue(res, l, CollTag::Content_at));
         Content = static_cast<std::string>(PGgetvalue(res, l, CollTag::Content));
         SetValue(*this);
         AllTag[ID] = this;;
+
+        time_t Content_at_tm = DataTimeOfString(Content_at);
+        if(Content_at_tm > GlobalSQL_tm)
+        {
+            GlobalSQL_tm = Content_at_tm;
+            GlobalSQL_Date = Content_at;
+        }
+
         return true;
     }CATCH(SQLLogger, "GetTagTable");
     return false;
@@ -93,8 +103,17 @@ bool Value::GetCurentValue(PGresult* res, int l, int id)
     if(ID != id) return false;
     try
     {
-        Content = static_cast<std::string>(PGgetvalue(res, l, 1));
+        Content_at = static_cast<std::string>(PGgetvalue(res, l, CollTagValue::Content_at));
+        Content = static_cast<std::string>(PGgetvalue(res, l, CollTagValue::Content));
         SetValue(*this);
+
+        time_t Content_at_tm = DataTimeOfString(Content_at);
+        if(Content_at_tm > GlobalSQL_tm)
+        {
+            GlobalSQL_tm = Content_at_tm;
+            GlobalSQL_Date = Content_at;
+        }
+
     }CATCH(SQLLogger, "GetCurentValue");
     return true;
 }

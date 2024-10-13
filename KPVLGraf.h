@@ -22,9 +22,9 @@ enum class LOGLEVEL{
 
 #define FUNCTION_LINE_NAME (std::string( __FUNCTION__ ) + std::string (":") + std::to_string(__LINE__))
 
-#define LOG_INFO(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_INFO, _s1, _s2, _s3)
-#define LOG_WARN(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_WARN, _s1, _s2, _s3)
-#define LOG_ERROR(_s1, _s2, _s3)DenugInfo(LOGLEVEL::LEVEL_ERROR, _s1, _s2, _s3)
+#define LOG_INFO(_l, _s2, _c)DenugInfo(LOGLEVEL::LEVEL_INFO, _l, _s2, _c)
+#define LOG_WARN(_l, _s2, _c)DenugInfo(LOGLEVEL::LEVEL_WARN, _l, _s2, _c)
+#define LOG_ERROR(_l, _s2, _c)DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, _s2, _c)
 
 #define LOG_ERR_SQL(_l, _r, _c){\
 LOG_ERROR(_l, FUNCTION_LINE_NAME, _c);\
@@ -34,10 +34,10 @@ LOG_ERROR(_l, FUNCTION_LINE_NAME, utf8_to_cp1251(PQresultErrorMessage(_r)));\
 
 
 #define CATCH(_l, _s) \
-    catch(std::filesystem::filesystem_error& exc) { DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s),  exc.what());} \
-    catch(std::runtime_error& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
-    catch(std::exception& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), exc.what());} \
-    catch(...){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s), "Unknown error");}
+    catch(std::filesystem::filesystem_error& exc) { DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s) + ": " + exc.what());} \
+    catch(std::runtime_error& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s) + ": " + exc.what());} \
+    catch(std::exception& exc){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s) + ": " + exc.what());} \
+    catch(...){DenugInfo(LOGLEVEL::LEVEL_ERROR, _l, FUNCTION_LINE_NAME, std::string(_s) + ": " + "Unknown error");}
 
 #define WaitCloseTheread(_t) if(_t){\
     DWORD dwEvent = WaitForSingleObject(_t, 2000);\
@@ -62,7 +62,8 @@ BOOL CenterWindow(HWND hwndChild, HWND hwndParent);
 
 
 //Вывод в файл отладочной ингформации
-void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::string s3 = "");
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2);
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::stringstream& s2);
 
 
 inline int Stoi(std::string input)

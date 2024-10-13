@@ -3,18 +3,6 @@
 
 #include "framework.h"
 
-//#include <io.h>
-//#include <strsafe.h>
-//#include <shlobj.h>
-//#include <stdlib.h>
-//#include <direct.h>
-//#include <wtsapi32.h>
-//#include <psapi.h>
-//#include <userenv.h>
-//#include <chrono>
-//#include <commctrl.h>
-//#include <fstream>
-
 #include "KPVLGraf.h"
 #include "About.h"
 #include "SQL.h"
@@ -73,7 +61,7 @@ BOOL CenterWindow(HWND hwndChild, HWND hwndParent)
 
 
 
-void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::string s3)
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2)
 {
     time_t st = time(0);
     std::tm TM;
@@ -92,7 +80,31 @@ void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::string s2, std::s
     std::ofstream F(file.c_str(), std::ios::binary | std::ios::out | std::ios::app);
     if(F.is_open())
     {
-        F << sFormat << s1 << " -> " << s2 << " " << s3 << std::endl;
+        F << sFormat << s1 << " -> " << s2 << std::endl;
+        F.close();
+    }
+}
+
+void DenugInfo(LOGLEVEL l, std::string f, std::string s1, std::stringstream& s2)
+{
+    time_t st = time(0);
+    std::tm TM;
+    localtime_s(&TM, &st);
+    char sFormat[1024];
+    if(l == LOGLEVEL::LEVEL_INFO)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [INFO] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else if(l == LOGLEVEL::LEVEL_WARN)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [WARN] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else if(l == LOGLEVEL::LEVEL_ERROR)
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [ERROR] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    else
+        sprintf_s(sFormat, 1024, "[%04d-%02d-%02d %02d:%02d:%02d] [CRITICAL] ", TM.tm_year + 1900, TM.tm_mon + 1, TM.tm_mday, TM.tm_hour, TM.tm_min, TM.tm_sec);
+
+    std::string file = f + ".log";
+    std::ofstream F(file.c_str(), std::ios::binary | std::ios::out | std::ios::app);
+    if(F.is_open())
+    {
+        F << sFormat << s1 << " -> " << s2.str() << std::endl;
         F.close();
     }
 }

@@ -47,6 +47,9 @@ extern std::string m_dbname;
 extern std::string m_dbuser;
 extern std::string m_dbpass;
 
+extern std::string GlobalSQL_Date;
+extern time_t GlobalSQL_tm;
+
 std::string cp1251_to_utf8(std::string str);
 std::string utf8_to_cp1251(std::string str);
 
@@ -57,11 +60,18 @@ namespace CollTag{
     extern int Type;
     extern int Arhive;
     extern int Comment;
+    extern int Content_at;
     extern int Content;
     extern int Coeff;
     extern int Hist;
     extern int Format;
     extern int Idsec;
+}
+
+namespace CollTagValue{
+    extern int Id;
+    extern int Content_at;
+    extern int Content;
 }
 
 namespace evCassete
@@ -142,11 +152,17 @@ public:
             ::PQexec(m_connection, cp1251_to_utf8(std).c_str());
     };
 
-    PGresult* MyPQexec(std::string std){
+    PGresult* PGexec(std::stringstream& std){
         if(!connections) return 0;
         return
-            ::PQexec(m_connection, std.c_str());
+            ::PQexec(m_connection, cp1251_to_utf8(std.str()).c_str());
     };
+
+    //PGresult* MyPQexec(std::string std){
+    //    if(!connections) return 0;
+    //    return
+    //        ::PQexec(m_connection, std.c_str());
+    //};
 
     std::string PGgetvalue(PGresult* res, int l, int i)
     {

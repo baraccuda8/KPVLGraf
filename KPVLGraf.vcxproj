@@ -166,6 +166,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="About.h" />
+    <ClInclude Include="DataTime.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="GdiPlusInit.h" />
     <ClInclude Include="KPVLGraf.h" />
@@ -178,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="About.cpp" />
+    <ClCompile Include="DataTime.cpp" />
     <ClCompile Include="GdiPlusInit.cpp" />
     <ClCompile Include="KPVLGraf.cpp" />
     <ClCompile Include="LoginDlg.cpp" />
