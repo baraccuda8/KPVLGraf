@@ -169,6 +169,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="GdiPlusInit.h" />
     <ClInclude Include="KPVLGraf.h" />
+    <ClInclude Include="LoginDlg.h" />
     <ClInclude Include="Paint.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SQL.h" />
@@ -179,6 +180,7 @@
     <ClCompile Include="About.cpp" />
     <ClCompile Include="GdiPlusInit.cpp" />
     <ClCompile Include="KPVLGraf.cpp" />
+    <ClCompile Include="LoginDlg.cpp" />
     <ClCompile Include="Paint.cpp" />
     <ClCompile Include="SQL.cpp" />
     <ClCompile Include="Value.cpp" />

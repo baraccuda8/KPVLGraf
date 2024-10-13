@@ -41,4 +41,6 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 
+using namespace boost::adaptors;
+
 #include "resource.h"

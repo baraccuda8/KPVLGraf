@@ -93,7 +93,7 @@ public:
     PGconn* m_connection;
     bool connections = false;
     std::string Name = "";
-    PGConnection() { };
+    PGConnection(): connections(false){ };
 
     ~PGConnection()
     { 
@@ -106,13 +106,7 @@ public:
         {
             if(connections)return connections;
 
-            m_connection = PQsetdbLogin(
-                m_dbhost.c_str(),
-                m_dbport.c_str(),
-                nullptr, nullptr,
-                m_dbname.c_str(),
-                m_dbuser.c_str(),
-                m_dbpass.c_str());
+            m_connection = PQsetdbLogin(m_dbhost.c_str(), m_dbport.c_str(), nullptr, nullptr, m_dbname.c_str(), m_dbuser.c_str(), m_dbpass.c_str());
 
             ConnStatusType st = PQstatus(m_connection);
             if(st != CONNECTION_OK && PQsetnonblocking(m_connection, 1) != 0)
@@ -161,6 +155,8 @@ public:
     }
 
 };
+
+extern PGConnection conn_spis;
 
 extern std::map<int, Value*>AllTag;
 
